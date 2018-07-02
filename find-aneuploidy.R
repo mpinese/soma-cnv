@@ -513,7 +513,7 @@ markFixedLoci = function(data, epsilon, alpha, plot = FALSE)
 main = function()
 {
     sprintf(
-'Find regions of subclonal aneuploidy in NGS count data.
+'Find regions of subclonal aneuploidy in massively-parallel sequencing data.
 
 Usage:
   find-aneuploidy2.R [options] <affinity> <gc> <infile> <outfile>
@@ -524,7 +524,7 @@ Parameters:
   <affinity>       Path to input affinity calibration file, tsv format with header, columns chrom, pos, affinity.
   <gc>             Path to input GC file, tsv format with header, columns chrom, pos, gc100, gc200, gc400, gc600, gc800.
   <infile>         Path to input allele depth file, tsv format with header, columns chrom, pos, dp, ad.
-  <outfile>        Output RDS
+  <outfile>        Output RDS.
 
 Options:
   -h --help        Show this message.
@@ -533,7 +533,7 @@ Options:
   --fixpval=<F>    P-value threshold to exclude fixed loci [default: 0.01].
   --segsize=<I>    Initial genome segment size, in loci [default: 100].
   --segpval=<F>    Segment merge P-value threshold [default: 0.01].
-  --model=<S>      Error model to use, either poisson or nb [default: poisson].
+  --model=<S>      Error model to use, either poisson or nb [default: nb].
   --maxploidy=<I>  Maximum allele copy number to consider [default: 2].
   --diag=<P>       Path to PDF of diagnostic plots (if not specified, plots are not generated).
 
@@ -561,7 +561,7 @@ Mark Pinese  <m.pinese@garvan.org.au>', VERSION) -> doc
     opts$epsilon = as.numeric(opts$epsilon)
     opts$fixpval = as.numeric(opts$fixpval)
     opts$maxploidy = as.integer(opts$maxploidy)
-    opts$model = match.arg(opts$model, choices = c("poisson", "nb"))
+    opts$model = match.arg(opts$model, choices = c("nb", "poisson"))
     opts$segsize = as.integer(opts$segsize)
     opts$segpval = as.numeric(opts$segpval)
 
