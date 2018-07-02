@@ -5,7 +5,7 @@ Detect somatic copy number changes in low-depth sequencing data
 
 soma-cnv is a suite of tools to detect somatic copy number changes using low depth whole genome sequencing data.  Somatic copy number changes often occur in only a small proportion of the cells contributing to the sequenced DNA, and consequently manifest as subtle signals.  soma-cnv combines data from adjacent loci to increase its sensitivity to these subtle changes, trading positional resolution for sensitivity.  The output of soma-snv is a segmentation of the genome into copy number regions with estimated allele ploidies, and an estimation of the aneuploid fraction present in a sample.
 
-![Example of soma-cnv detections](https://github.com/mpinese/soma-cnv/docs/example.png)
+![Example of soma-cnv detections](/docs/example.png?raw=true "Somatic copy number changes detected by soma-cnv")
 
 
 ## Workflow
