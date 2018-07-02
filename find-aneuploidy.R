@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-VERSION = "v0.0.1  23 Nov 2017"
+VERSION = "v0.0.2  2 July 2017"
 
 suppressPackageStartupMessages(library(ggplot2))    # For plotting only
 suppressPackageStartupMessages(library(mgcv))
