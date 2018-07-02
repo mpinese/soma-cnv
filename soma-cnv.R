@@ -516,9 +516,9 @@ main = function()
 'Find regions of subclonal aneuploidy in massively-parallel sequencing data.
 
 Usage:
-  find-aneuploidy2.R [options] <affinity> <gc> <infile> <outfile>
-  find-aneuploidy2.R -h | --help
-  find-aneuploidy2.R --version
+  soma-cnv.R [options] <affinity> <gc> <infile> <outfile>
+  soma-cnv.R -h | --help
+  soma-cnv.R --version
 
 Parameters:
   <affinity>       Path to input affinity calibration file, tsv format with header, columns chrom, pos, affinity.
