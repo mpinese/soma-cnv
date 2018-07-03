@@ -177,12 +177,14 @@ chrom start_pos   end_pos fit.k1 fit.k2     fit.f
 
 soma-cnv optionally emits a PDF of diagnostic plots, which can be useful to identify fit issues.
 
-Diagnostic plot 1: homozygote exclusion:
+##### Diagnostic plot 1: homozygote exclusion
 
 ![Diagnostic plot 1: homozygote exclusion](/docs/example2-diagnostics-pg1.jpg?raw=true "Diagnostic plot 1: homozygote exclusion")
 
 This plot is used to verify that soma-cnv is only modelling data from heterozygous loci.  Shown above is an example of a good plot, in which the majority of data points are from het loci (blue), and only a few are from homozygous loci (red).  If a large number of data points have a VAF close to zero or one, and especially if these points have been called as heterozygous by soma-cnv, the model will likely not fit well.  Reexamination of the variant calling pipeline to ensure that homozygous loci aren't reported, or improved filtering of the whitelist loci, might help.
 
+
+##### Diagnostic plot 2: data points and fit
 
 ![Diagnostic plot 2: data points and fit](/docs/example2-diagnostics-pg3.jpg?raw=true "Diagnostic plot 2: data points and fit")
 
@@ -193,6 +195,8 @@ This plot shows the overall data distribution and fit across the genome.  This e
 
 Noisy depth data and overdispersion may indicate an issue with calibration, especially if this is observed in the majority of samples.  In that case, generation of custom calibration data may resolve the problem.  Contamination cannot be addressed except by resequencing, ideally from a freshly-collected sample.
 
+
+#### Example exploration of the output RDS.
 
 ```R
 result = readRDS("docs/example.rds")
