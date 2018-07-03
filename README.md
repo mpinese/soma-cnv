@@ -88,10 +88,13 @@ chrom	pos	affinity
   1. At each locus j of m total loci in `whitelist.loci.tsv`, measure the duplicate-excluded sequencing depth ![d_i_j](/docs/eqn_d_i_j.gif?raw=true "d_i_j").
   2. Calculate the mean depth across all loci in `whitelist.loci.tsv`, ![eqn_d_bar_i](/docs/eqn_d_bar_i.gif?raw=true "eqn_d_bar_i").
   3. At each locus in `whitelist.loci.tsv`, calculate the normalised depth, ![eqn_c_i_j](/docs/eqn_c_i_j.gif?raw=true "eqn_c_i_j").
-4. For each locus, calculate the mean normalised depth across all samples, ![eqn_c_j](/docs/eqn_c_j.gif?raw=true "eqn_c_j").
-5. Normalise the mean normalised depth to have mean of 1, ![eqn_a_hat_j](/docs/eqn_a_hat_j.gif?raw=true "eqn_a_hat_j").
+3. For each locus, calculate the mean normalised depth across all samples, ![eqn_c_j](/docs/eqn_c_j.gif?raw=true "eqn_c_j").
+4. Normalise the mean normalised depth to have mean of 1, ![eqn_a_hat_j](/docs/eqn_a_hat_j.gif?raw=true "eqn_a_hat_j").
 
 The resultant ![a_hat_j](/docs/eqn_hat_a_j.gif?raw=true "\hat{a_j}") are the affinity values to insert into `whitelist.affinity.tsv`.
+
+Note that if your data are particularly variable, a robust alternative (eg median) to the means in steps 2i and 3 will also work.  The normalisation in step 4 should remain the arithmetic mean.
+
 
 ### 2. Per-sample: collection of allele-specific depths
 
