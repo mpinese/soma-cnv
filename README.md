@@ -13,13 +13,14 @@ soma-cnv's key properties:
 * Highly sensitive: calling copy number variation in low purity samples (down to ~ 5% aneuploid nucleated cell fraction)
 * Suitable for low-depth data: soma-cnv was developed to work on human WGS intended for germline genotyping (30-40X mean depth).
 * Approximate resolution of CNV only: soma-cnv's spatial resolution depends on the loci it is supplied.  Typically CNV is localised to within 10 kb, but soma-cnv does not give base-level breakpoint resolution.
-* Assumes the presence of a single clonal aneuploid fraction mixed within diploid cells.  Deviations from this assumption (eg aneuploid subclones) will degrade performance.
+* Assumes the presence of a single clonal aneuploid fraction mixed among diploid cells.  Deviations from this assumption (eg aneuploid subclones) will degrade performance.
 * Works on a per-sample basis.
-* Requires calibration files for best performance.  One set of calibration files is supplied, but it may be necessary to generate calibration files for different experimental setups.  Although soma-cnv's primary calling workflow works in single-sample mode, the generation of calibration files requires a large collection of platform-matched samples.
+* Requires calibration files.  One set of calibration files is supplied, but it may be necessary to generate calibration files for different experimental setups.  Although soma-cnv's primary calling workflow works in single-sample mode, the generation of calibration files requires a large collection of platform-matched samples.
 
 
 ## Requirements
 
+* Mapped sequencing data
 * A variant caller (eg GATK HaplotypeCaller, samtools.  Tested with GATK 3.7-0-gcfedb67)
 * R (tested with v3.4.2)
   * mgcv (tested with 1.8-22)
@@ -72,7 +73,8 @@ python generate_gc.py reference.fa whitelist.loci.tsv > whitelist.gc.tsv
 
 Where `reference.fa` is the reference fasta, `whitelist.loci.tsv` is the set of whitelist loci from step A, and `whitelist.gc.tsv` is the generated gc covariate file.
 
-#### C. Affinity correction
+
+#### C. Affinity calculation
 The final calibration file required is the locus affinity file `whitelist.affinity.tsv`, which is used to correct for platform-specific sequencing depth differences between loci.  The affinity file is a tab-separated table with header `chrom	pos	affinity`, for example:
 ```
 chrom	pos	affinity
