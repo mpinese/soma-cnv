@@ -18,5 +18,5 @@ BEGIN {
         next
 
     split(data["AD"], ads, ",")
-    print $1, $2, ads[0] + ads[1], ads[1]
+    print $1, $2, ads[1] + ads[2], ads[2]
 }
