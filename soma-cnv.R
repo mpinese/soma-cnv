@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-VERSION = "v0.0.2  2 July 2017"
+VERSION = "v0.0.3  7 Feb 2019"
 
 suppressPackageStartupMessages(library(ggplot2))    # For plotting only
 suppressPackageStartupMessages(library(mgcv))
@@ -94,6 +94,50 @@ testWindowDifference = function(data1, data2)
 }
 
 
+finetuneWindows = function(windows, data, search_size)
+{
+    # Fune-tune windows identified by findWindows: for every
+    # intra-chromosomal break, find the optimal breakpoint
+    # within a +/- search_size interval.
+    ddply(windows, .(chrom), finetuneWindows.chrom, data = data, search_size = search_size)
+}
+
+
+finetuneWindows.chrom = function(chrom_windows, data, search_size, window_size = 100)
+{
+    # Note an issue with this algorithm: it only optimises a single breakpoint, which
+    # can be error-prone if multiple adjacent breakpoints are incorrect.  More accurately
+    # it should optimise all breakpoints simultaneously.
+
+    if (nrow(chrom_windows) == 1)
+        return(chrom_windows)       # No breakpoints so nothing to do
+
+    for (i in 1:(nrow(chrom_windows)-1))
+    {
+        # Work on the breakpoint between chrom_windows[i,] and chrom_windows[i+1,]
+        # The breakpoint position is currently between chrom_windows$end_index[i] and
+        # chrom_windows$start_index[i+1].  Search in [chrom_windows$end_index[i]-search_size+1,
+        # chrom_windows$end_index[i]+search_size] for a better breakpoint.
+        left_start = chrom_windows$start_index[i]
+        right_end = chrom_windows$end_index[i+1]
+        break_search_start = chrom_windows$end_index[i]-search_size
+        break_search_end = chrom_windows$start_index[i+1]+search_size
+
+        # Search for the optimal breakpoint
+        candidate_breaks = break_search_start:break_search_end
+        candidate_break_pvals = sapply(candidate_breaks, function(j) testWindowDifference(data[(j-window_size+1):j,,drop=FALSE], data[(j+1):(j+window_size),,drop=FALSE]))
+        best_break = candidate_breaks[which.min(candidate_break_pvals)]
+
+        # Update the windows to match
+        chrom_windows$end_index[i] = best_break
+        chrom_windows$start_index[i+1] = best_break+1
+        chrom_windows$pr_vs_prev[i+1] = min(candidate_break_pvals, na.rm = TRUE)
+    }
+
+    chrom_windows
+}
+
+
 # First split xsomes into small windows.
 # Progressively merge by KS test.
 # Calculate fits based on windowed regions -- direct optim.
@@ -157,6 +201,9 @@ findWindows = function(data, initial_size = 100, alpha = 0.01)
         }
     }
 
+    # Fine tune breakpoints
+    windows = finetuneWindows(windows, data, initial_size)
+
     # Add coordinates and return
     windows$start_pos = data$pos[windows$start_index]
     windows$end_pos = data$pos[windows$end_index]
@@ -200,11 +247,24 @@ fitWindow.kfs = function(window_data, ks, f, isize, w)
     dp1 = window_data$dp - window_data$ad
     dp2 = window_data$ad
     if (isize == 0)
+    {
         lliks = apply(ks, 1, function(k) llik.pois(dp1, dp2, f, k[1], k[2], window_data$pois.lambda, w))
+        llik_gldup = llik.pois(dp1, dp2, f=1, 1, 2, window_data$pois.lambda, w)
+    }
     else
+    {
         lliks = apply(ks, 1, function(k) llik.nb(dp1, dp2, f, k[1], k[2], window_data$pois.lambda, 1/isize, w))
+        llik_gldup = llik.nb(dp1, dp2, f=1, 1, 2, window_data$pois.lambda, 1/isize, w)
+    }
+
+    if (llik_gldup >= max(lliks))
+    {
+        # Most likely a germline duplication
+        return(list(k1 = 1, k2 = 2, f = 1, isize = isize, llik = llik_gldup, type = "gldup"))
+    }
+
     besti = which.max(lliks)
-    list(k1 = ks[besti,1], k2 = ks[besti,2], f = f, isize = isize, llik = lliks[besti])
+    list(k1 = ks[besti,1], k2 = ks[besti,2], f = f, isize = isize, llik = lliks[besti], type = "som")
 }
 
 
@@ -368,9 +428,14 @@ fitWindows = function(data, max_maxk, family = c("poisson", "nb"), w = NULL, win
     message("  Fitting candidate models")
     model_search = llply(1:max_maxk, function(maxk) fitWindows.maxk(data, windows, maxk, family, w))
     models = ldply(model_search, function(model_search_result) model_search_result$optimum)
-    models$p = ceiling(log2((models$maxk+1)*(models$maxk+2)/2)) + c("poisson" = 1, "nb" = 2)[family]
+    models$p = log((models$maxk+1)*(models$maxk+2)/2)*nrow(windows) + c("poisson" = 0, "nb" = 1)[family]
+    # Note log term, which is to account for the discrete nature of the ploidy estimates.
+    # There are s=(maxk+1)*(maxk+2)/2 possible ploidy states for each window, with penalty
+    # approximately log(s).  Multiplication by nrow(windows) accounts for each window having
+    # its own independent ploidy estimate.  The constant term is for the global isize 
+    # parameter in nb models.
 
-    models = rbind(models, c(f = 0, isize = null_fit$fit.isize[1], maxk = NA, ll = null_loglik, p = c("poisson" = 0, "nb" = 1)))
+    models = rbind(models, c(f = 0, isize = null_fit$fit.isize[1], maxk = NA, ll = null_loglik, p = c("poisson" = 0, "nb" = 1)[family]))
     models$BIC = -2*models$ll + log(nrow(data))*models$p
     besti = which.min(models$BIC)
 
