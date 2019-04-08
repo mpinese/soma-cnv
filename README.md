@@ -139,7 +139,7 @@ xz -dc data/truseq_nano_hiseqX_hs37d5x.loci.tsv.xz | \
   > truseq_nano_hiseqX_hs37d5x.loci.bed
 
 bcftools mpileup -f <reference.fa> -B -C 50 -q 40 -Q 30 -I -R truseq_nano_hiseqX_hs37d5x.loci.bed -a 'FORMAT/AD' sampleID.bam | \
-  python3 utils/bcftools_vcf2ad.py data/truseq_nano_hiseqX_hs37d5x.loci.tsv.xz | \
+  python3 util/bcftools_vcf2ad.py data/truseq_nano_hiseqX_hs37d5x.loci.tsv.xz | \
   xz -c \
   > sampleID.soma-cnv.hetdp.xz
 ```
