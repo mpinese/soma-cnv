@@ -37,7 +37,12 @@ proc quickpile(bam: Bam, chrom: string, position: int, ref_allele: char, alt_all
     nref = 0
     noth = 0
 
+  echo chrom
+  echo position
+
   for aln in bam.query(chrom, position - 1, position):
+    echo "."
+    discard """
     var
       off = aln.start
       qoff = 0
@@ -85,7 +90,7 @@ proc quickpile(bam: Bam, chrom: string, position: int, ref_allele: char, alt_all
         nalt += 1
       else:
         noth += 1
-
+"""
   return (nref, nalt, noth)
 
 
