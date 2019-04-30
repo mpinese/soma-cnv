@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-VERSION = "v0.0.3  7 Feb 2019"
+VERSION = "v0.0.4  29 Apr 2019"
 
 suppressPackageStartupMessages(library(ggplot2))    # For plotting only
 suppressPackageStartupMessages(library(mgcv))
@@ -84,6 +84,8 @@ fitDepthAnomaly = function(sample_data, affinity, gc, trim = 0)
 
 testWindowDifference = function(data1, data2)
 {
+    if (nrow(data1) == 0 || nrow(data2) == 0)
+        return(1)
     ad1 = data1$ad
     ad2 = data2$ad
     rd1 = data1$dp - ad1
@@ -120,8 +122,8 @@ finetuneWindows.chrom = function(chrom_windows, data, search_size, window_size =
         # chrom_windows$end_index[i]+search_size] for a better breakpoint.
         left_start = chrom_windows$start_index[i]
         right_end = chrom_windows$end_index[i+1]
-        break_search_start = chrom_windows$end_index[i]-search_size
-        break_search_end = chrom_windows$start_index[i+1]+search_size
+        break_search_start = max(window_size, chrom_windows$end_index[i]-search_size)
+        break_search_end = min(chrom_windows$start_index[i+1]+search_size, nrow(data) - window_size)
 
         # Search for the optimal breakpoint
         candidate_breaks = break_search_start:break_search_end
@@ -475,12 +477,14 @@ plotWindowFit = function(data, fit)
     fit$coldisc[fit$coldisc == 0] = 1
     pal = rainbow(100, end = 0.33)
 
+    data = data[data$het,]
+
     chrom_boundaries = which(data$chrom[-1] != data$chrom[-nrow(data)])
     chrom_midpoints = (c(0, chrom_boundaries) + c(chrom_boundaries, nrow(data))) / 2
     names(chrom_midpoints) = data$chrom[!duplicated(data$chrom)]
 
     par(mfrow = c(2, 1))
-    plot(log2(data$dp) - log2(data$pois.lambda), pch = ".", col = rgb(0, 0, 0, 0.25), xlab = "Genomic position", ylab = "Depth anomaly (log2)", main = "Depth", xaxt = "n")
+    plot(log2(data$dp) - log2(data$pois.lambda), pch = ".", col = rgb(0, 0, 0, 0.25), xlab = "Genomic position", ylab = "Depth anomaly (log2)", main = "Processed data depth", xaxt = "n")
     axis(1, at = chrom_midpoints, labels = names(chrom_midpoints))
 #    lines(runmed(log2(data$dp) - log2(data$pois.lambda), k = 151), col = "red", lwd = 1)
     lines(tvd1d(log2(data$dp) - log2(data$pois.lambda), lambda = 5), col = "red", lwd = 2)
@@ -488,7 +492,7 @@ plotWindowFit = function(data, fit)
     abline(v = fit$start_index, col = "red", lty = "dotted")
     segments(fit$start_index, fit$d, fit$end_index, fit$d, col = pal[fit$coldisc], lwd = 3)
 
-    plot(data$ad / jitter(data$dp, amount = 0.5), pch = ".", ylim = c(0, 1), col = rgb(0, 0, 0, 0.25), xlab = "Genomic position", ylab = "VAF", main = "Allele frequency", xaxt = "n")
+    plot(data$ad / jitter(data$dp, amount = 0.5), pch = ".", ylim = c(0, 1), col = rgb(0, 0, 0, 0.25), xlab = "Genomic position", ylab = "VAF", main = "Processed data allele frequency", xaxt = "n")
     axis(1, at = chrom_midpoints, labels = names(chrom_midpoints))
     abline(v = chrom_boundaries, col = "blue", lwd = 2)
     abline(v = fit$start_index, col = "red", lty = "dotted")
@@ -505,11 +509,11 @@ plotRawData = function(data)
     names(chrom_midpoints) = data$chrom[!duplicated(data$chrom)]
 
     par(mfrow = c(2, 1))
-    plot(jitter(data$dp, amount = 0.5), pch = ".", col = rgb(0, 0, 0, 0.25), xlab = "Genomic position", ylab = "Depth", main = "Depth", xaxt = "n")
+    plot(jitter(data$dp, amount = 0.5), pch = ".", col = rgb(0, 0, 0, 0.25), xlab = "Genomic position", ylab = "Depth", main = "Raw data depth", xaxt = "n")
     axis(1, at = chrom_midpoints, labels = names(chrom_midpoints))
     abline(v = chrom_boundaries, col = "blue", lwd = 2)
 
-    plot(data$ad / jitter(data$dp, amount = 0.5), pch = ".", ylim = c(0, 1), col = rgb(0, 0, 0, 0.25), xlab = "Genomic position", ylab = "VAF", main = "Allele frequency", xaxt = "n")
+    plot(data$ad / jitter(data$dp, amount = 0.5), pch = ".", ylim = c(0, 1), col = rgb(0, 0, 0, 0.25), xlab = "Genomic position", ylab = "VAF", main = "Raw data allele frequency", xaxt = "n")
     axis(1, at = chrom_midpoints, labels = names(chrom_midpoints))
     abline(v = chrom_boundaries, col = "blue", lwd = 2)
     par(mfrow = c(1, 1))
@@ -567,7 +571,7 @@ markFixedLoci = function(data, epsilon, alpha, plot = FALSE)
         plot_data$class[data$het] = "Het"
         plot_data$class[homRR] = "RR"
         plot_data$class[homAA] = "AA"
-        print(ggplot(plot_data, aes(x = vaf, fill = class)) + geom_histogram(binwidth = 0.01) + xlab("VAF (jittered)") + xlim(0, 1))
+        print(ggplot(plot_data, aes(x = vaf, fill = class)) + geom_histogram(binwidth = 0.01) + xlab("VAF (jittered)") + xlim(0, 1) + ggtitle("Filtering fixed loci") + theme_bw())
     }
 
     data
@@ -588,19 +592,19 @@ Usage:
 Parameters:
   <affinity>       Path to input affinity calibration file, tsv format with header, columns chrom, pos, affinity.
   <gc>             Path to input GC file, tsv format with header, columns chrom, pos, gc100, gc200, gc400, gc600, gc800.
-  <infile>         Path to input allele depth file, tsv format with header, columns chrom, pos, dp, ad.
+  <infile>         Path to input allele depth file, tsv format *WITHOUT* header, columns chrom, pos, dp, ad.
   <outfile>        Output RDS.
 
 Options:
   -h --help        Show this message.
   --version        Show version.
   --epsilon=<F>    Per-base error rate [default: 0.02].
-  --fixpval=<F>    P-value threshold to exclude fixed loci [default: 0.01].
+  --fixpval=<F>    P-value threshold to exclude fixed loci [default: 0.0001].
   --segsize=<I>    Initial genome segment size, in loci [default: 100].
   --segpval=<F>    Segment merge P-value threshold [default: 0.01].
   --model=<S>      Error model to use, either poisson or nb [default: nb].
   --maxploidy=<I>  Maximum allele copy number to consider [default: 2].
-  --diag=<P>       Path to PDF of diagnostic plots (if not specified, plots are not generated).
+  --diag=<P>       Path to diagnostic plots. If not specified, plots are not generated. Plot format is determined by extension (pdf or png).
 
 %s
 Mark Pinese  <m.pinese@garvan.org.au>', VERSION) -> doc
@@ -620,7 +624,12 @@ Mark Pinese  <m.pinese@garvan.org.au>', VERSION) -> doc
     if (!is.null(opts$diag))
     {
         diag_mode = TRUE
-        pdf(opts$diag, height = 8, width = 8)
+        if (grepl("\\.pdf$", opts$diag))
+            pdf(opts$diag, height = 8, width = 8)
+        else if (grepl("\\.png$", opts$diag))
+            png(gsub("\\.png$", "_%d.png", opts$diag), height = 8*150, width = 8*150, res = 150)
+        else
+            stop(sprintf("Unrecognised extension for diagnostic plots file %f.  .png and .pdf only accepted", opts$diag))
     }
 
     opts$epsilon = as.numeric(opts$epsilon)
